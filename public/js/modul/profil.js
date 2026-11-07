@@ -151,6 +151,7 @@ const kameraDongusu = async () => {
       if (kameraUrl) URL.revokeObjectURL(kameraUrl);
       kameraUrl = yeni;
       $('.kameraDurum').hide();
+      $('.kameraYukleniyor').hide();
     } catch (e) {
       $('.kameraDurum').text('Kamera görüntüsü alınamıyor. Yeniden deneniyor…').show();
       await new Promise((r) => setTimeout(r, 3000));
