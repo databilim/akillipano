@@ -44,6 +44,10 @@ const hazirla = async () => {
     await calistir(`CREATE TABLE IF NOT EXISTS io (
         ID INTEGER PRIMARY KEY AUTOINCREMENT, hex TEXT, adres INTEGER, durum INTEGER,
         input INTEGER, adi TEXT, status INTEGER, output TEXT, tipi TEXT)`);
+    await calistir('CREATE TABLE IF NOT EXISTS ayar (anahtar TEXT PRIMARY KEY, deger TEXT)');
+    await calistir(`CREATE TABLE IF NOT EXISTS zil_kayit (
+        ID INTEGER PRIMARY KEY AUTOINCREMENT, zaman TEXT, dosya TEXT, kaynak TEXT, adi TEXT)`);
+    await calistir('CREATE INDEX IF NOT EXISTS zil_kayit_zaman ON zil_kayit (zaman)');
     await calistir(`CREATE TABLE IF NOT EXISTS menu (
         ID INTEGER PRIMARY KEY, menuadi TEXT, url TEXT, durum INTEGER, icon TEXT)`);
 
@@ -119,5 +123,23 @@ module.exports = {
 
     menu: {
         listele: () => hepsi('SELECT * FROM menu'),
+    },
+
+    ayar: {
+        hepsi: async () => Object.fromEntries((await hepsi('SELECT anahtar, deger FROM ayar')).map((r) => [r.anahtar, r.deger])),
+        yaz: (anahtar, deger) => calistir(
+            'INSERT INTO ayar (anahtar, deger) VALUES (?, ?) ON CONFLICT(anahtar) DO UPDATE SET deger = excluded.deger',
+            [anahtar, deger]),
+    },
+
+    zilKayit: {
+        ekle: (k) => calistir('INSERT INTO zil_kayit (zaman, dosya, kaynak, adi) VALUES (?, ?, ?, ?)', [k.zaman, k.dosya, k.kaynak, k.adi]),
+        getir: (ID) => tek('SELECT * FROM zil_kayit WHERE ID = ?', [ID]),
+        // baslangic/bitis: ISO zaman (bitis hariç)
+        listele: ({ baslangic, bitis, limit = 200 } = {}) => hepsi(
+            'SELECT * FROM zil_kayit WHERE zaman >= ? AND zaman < ? ORDER BY zaman DESC LIMIT ?',
+            [baslangic || '0000', bitis || '9999', limit]),
+        oncekiler: (zaman) => hepsi('SELECT * FROM zil_kayit WHERE zaman < ?', [zaman]),
+        sil: (ID) => calistir('DELETE FROM zil_kayit WHERE ID = ?', [ID]),
     },
 };

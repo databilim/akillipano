@@ -60,6 +60,7 @@ const degistir = (ID, yeniDurum) => sirayla(async () => {
         clearTimeout(zilZamanlayicilari.get(kayit.ID));
         zilZamanlayicilari.delete(kayit.ID);
         if (hedef === 1) {
+            olaylar.emit('zilCaldi', kayit);
             zilZamanlayicilari.set(kayit.ID, setTimeout(() => {
                 zilZamanlayicilari.delete(kayit.ID);
                 degistir(kayit.ID, 0).then((s) => {

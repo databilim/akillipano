@@ -138,3 +138,31 @@ h3{
 .kullaniciPanel td, .kullaniciPanel th { padding: 6px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
 .kullaniciPanel .btn { margin: 2px 0; }
 .ayarlarListe a { display: block; padding: 10px 0; border-bottom: 1px solid #eee; }
+
+/* Kamera */
+.kameraKutu {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    margin: 16px auto 0;
+    background-color: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 120px;
+}
+.kameraKutu img { display: block; width: 100%; height: auto; }
+.kameraDurum {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 6px 12px; font-size: 13px; background: rgba(0, 0, 0, 0.6); color: #fff;
+}
+.bildirimMenu { position: relative; }
+.rozet {
+    position: absolute; top: 6px; right: 28px;
+    background: #c62828; color: #fff; border-radius: 10px;
+    font-size: 11px; padding: 0 6px; line-height: 18px;
+}
+.zilSatir { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; color: #333; }
+.zilSatir img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; margin-right: 10px; background: #000; }
+.zilGaleri { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.zilKart { display: block; color: #333; font-size: 13px; }
+.zilKart img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #000; }

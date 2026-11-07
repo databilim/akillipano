@@ -48,4 +48,12 @@ module.exports = {
     zilSuresiMs: sayi(process.env.ZIL_SURE_MS, 3000),
     butonKilitMs: sayi(process.env.BUTON_KILIT_MS, 300),
     acilistaDurumuYukle: evet(process.env.ACILISTA_DURUMU_YUKLE, true),
+
+    // Zil fotoğrafları bu klasörde saklanır, ZIL_KAYIT_GUN günden eskiler silinir
+    kayitKlasoru: process.env.KAYIT_KLASORU || path.join(__dirname, '..', 'kayitlar'),
+    zilKayitGun: sayi(process.env.ZIL_KAYIT_GUN, 60),
+    kamera: {
+        genislik: sayi(process.env.KAMERA_GENISLIK, 640), // canlı görüntü genişliği (Pi'yi yormamak için küçük)
+        fps: sayi(process.env.KAMERA_FPS, 5),
+    },
 };

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.css" >
+    <link rel="stylesheet" href="/css/style.css" >
+   
+    <script src="/js/jquery.js"></script>
+    <script src="/js/axios.js"></script>
+    <script src="/js/moment.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Sistem güncelleme</title>
+  </head>
+  <body>
+
+  
+    <div class="ust">
+
+      <div class="ustMenu connect "> <img width="35" src="/img/connect.svg" alt="">  </div>
+      <div class="ustMenu logo" > <img width="100" src="/img/logo-beyaz.svg" alt=""></div>
+      <div class="ustMenu zaman">  <span class="havaDurumu" style=" margin-right: 10px; color: #929292;">12</span>    <span><img width="25" src="img/derece.svg" alt=""></span>  <span class="time" ></span>   </div>
+      
+ </div>
+   
+   <div class="orta">
+     <div class="kullaniciPanel">
+       <h2>Sistem güncelleme</h2>
+       <p>Çalışan sürüm: <b id="surum">…</b></p>
+       <div id="guncellemeBilgi" class="mb-2"></div>
+       <button class="btn btn-outline-secondary" id="denetle">Güncellemeleri denetle</button>
+       <button class="btn btn-primary" id="guncelle" style="display:none">Güncelle</button>
+       <pre id="guncellemeKayit" class="mt-3 small" style="white-space: pre-wrap"></pre>
+     </div>
+   </div>
+
+   <!-- Modal ayarlar -->
+   <div class="modal fade" id="ayarlar" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ayarlar</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body ayarlarListe">
+          <a class="sadeceYonetici" style="display:none" href="tanimsiz.html">Tanımsız butonlar</a>
+          <a class="sadeceYonetici" style="display:none" href="kullanicilar.html">Kullanıcılar</a>
+          <a class="sadeceYonetici" style="display:none" href="kamera.html">Kamera ayarları</a>
+          <a class="sadeceYonetici" style="display:none" href="sistem.html">Sistem güncelleme</a>
+          <a href="zil.html">Zil kayıtları</a>
+          <a href="kullanicilar.html#sifre">Şifremi değiştir</a>
+          <a href="#" onclick="return cikisYap(event)">Çıkış yap</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+   <!-- Modal bildirimler -->
+<div class="modal fade" id="bildirimler" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bildirimler</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="zilSonlar">Henüz zil kaydı yok</div>
+        <a class="d-block mt-2" href="zil.html">Tüm zil kayıtları</a>
+      </div>
+    </div>
+  </div>
+</div>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/modul/socket.js"></script>
+    <script src="/js/modul/lib.js"></script>
+    <script src="/js/modul/sistem.js"></script>
+  </body>
+</html>

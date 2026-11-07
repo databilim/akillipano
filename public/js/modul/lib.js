@@ -62,3 +62,41 @@ const havaDurumu = async (element) => {
 setInterval(() => {
   $('.time').html(moment().format('DD.MM.YYYY HH:mm:ss'));
 }, 1000);
+
+// --- Zil bildirimleri (alt menüdeki zil simgesi) ---
+const tarihSaat = (iso) => moment(iso).format('DD.MM.YYYY HH:mm:ss');
+
+const zilSonlariGoster = async () => {
+  try {
+    const cevap = await axios.get('/kamera/zil', { params: { limit: 5 } });
+    const kayitlar = cevap.data.kayitlar || [];
+    if (!kayitlar.length) return;
+    $('.zilSonlar').html(kayitlar.map((k) => `
+      <a class="zilSatir" href="zil.html?tarih=${moment(k.zaman).format('YYYY-MM-DD')}">
+        <img src="/kamera/zil/${k.ID}/resim" alt="" loading="lazy">
+        <span>${kacis(k.adi || 'Zil')}<br><small>${tarihSaat(k.zaman)}</small></span>
+      </a>`).join(''));
+  } catch (e) { /* kamera yoksa sessiz geç */ }
+};
+
+let okunmamisZil = 0;
+const rozetGuncelle = () => {
+  if (okunmamisZil > 0) $('.bildirimMenu .rozet').text(okunmamisZil).show();
+  else $('.bildirimMenu .rozet').hide();
+};
+
+if (typeof socket !== 'undefined') {
+  socket.on('zilFotografi', (k) => {
+    okunmamisZil += 1;
+    rozetGuncelle();
+    zilSonlariGoster();
+    if (typeof bildirim === 'function') bildirim(`Zile basıldı (${tarihSaat(k.zaman)}). Fotoğraf Bildirimler'de.`);
+    $(document).trigger('zilFotografi', k);
+  });
+}
+
+$(document).ready(async () => {
+  if (!(await pano.hazir)) return;
+  zilSonlariGoster();
+  $('#bildirimler').on('show.bs.modal', () => { okunmamisZil = 0; rozetGuncelle(); });
+});

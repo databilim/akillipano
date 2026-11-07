@@ -16,6 +16,7 @@ Röle komutu `writeI2cBlock(adres, 0, 8 bayt)` ile gönderilir, yani Arduino `[0
 ```bash
 sudo raspi-config nonint do_i2c 0      # I2C'yi aç
 sudo usermod -aG i2c pi
+sudo apt install -y ffmpeg git         # kamera için ffmpeg
 git clone https://github.com/databilim/akillipano.git /home/pi/pano
 cd /home/pi/pano
 npm install
@@ -36,6 +37,25 @@ Mevcut `akillipano.db` dosyanızı uygulama klasörüne koyun (ya da `.env` içi
 - **Kullanıcı:** yalnızca aç/kapa ve kendi şifresini değiştirme.
 
 Kullanıcılar: Ayarlar (çark) → Kullanıcılar. Şifre değiştirme: Ayarlar → Şifremi değiştir.
+
+## Kamera ve zil fotoğrafları
+
+Ayarlar → Kamera ayarları (yönetici) sayfasından kameranın IP adresi, kullanıcı adı ve şifresi girilir.
+RTSP yolu boş bırakılırsa ONVIF ile kameradan sorulur; bulunamazsa yolu elle yazın
+(ör. Hikvision `/Streaming/Channels/102`, Dahua `/cam/realmonitor?channel=1&subtype=1`).
+"Fotoğraf çekerek dene" butonu ayarların çalışıp çalışmadığını gösterir.
+
+- Ana ekranda canlı görüntü: yalnızca birisi izlerken ffmpeg çalışır.
+- Zile basılınca (duvar butonu ya da ekran) ONVIF ile fotoğraf alınır; ONVIF yoksa RTSP görüntüsünden kare alınır.
+  Fotoğraflar `kayitlar/zil` klasöründe tarihleriyle saklanır, `ZIL_KAYIT_GUN` günden eskiler silinir.
+- Zil fotoğrafları: alt menüdeki zil simgesi (son 5) ve Ayarlar → Zil kayıtları (güne göre). Tüm kullanıcılar görebilir, yalnızca yönetici silebilir.
+
+## Uzaktan güncelleme
+
+Ayarlar → Sistem güncelleme (yönetici): GitHub'daki yeni değişiklikleri listeler, "Güncelle" ile indirir,
+gerekirse `npm install` çalıştırır ve uygulamayı yeniden başlatır (systemd servisi olarak çalışıyorsa otomatik).
+Pi'deki klasör `git clone` ile kurulmuş ve `main` dalında olmalı. Pi üzerinde dosyalar elle değiştirilmişse
+güncelleme yapılmaz.
 
 ## Davranış
 

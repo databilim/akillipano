@@ -72,3 +72,46 @@ socket.on('connect', () => {
 $(document).ready(async () => {
   if (await pano.hazir) gruplariGoster();
 });
+
+// --- Canlı kamera ---
+let kameraUrl = null;
+let kameraAcik = false;
+
+const kameraIzle = () => {
+  if (kameraAcik && !document.hidden) socket.emit('kameraIzle');
+};
+
+socket.on('kameraKare', (kare) => {
+  const yeni = URL.createObjectURL(new Blob([kare], { type: 'image/jpeg' }));
+  const img = document.getElementById('kameraCanli');
+  img.onload = () => { if (kameraUrl && kameraUrl !== yeni) URL.revokeObjectURL(kameraUrl); kameraUrl = yeni; };
+  img.src = yeni;
+  $('.kameraDurum').hide();
+});
+
+socket.on('kameraDurum', (d) => {
+  if (d.calisiyor) $('.kameraDurum').hide();
+  else $('.kameraDurum').text(`Kamera görüntüsü alınamıyor: ${d.hata || ''}. Yeniden deneniyor…`).show();
+});
+
+// Bağlantı yeniden kurulunca izlemeye devam et
+socket.on('connect', kameraIzle);
+
+// Sekme arka plandayken görüntü gönderilmesin (Pi'yi ve ağı yormasın)
+document.addEventListener('visibilitychange', () => {
+  if (!kameraAcik) return;
+  if (document.hidden) socket.emit('kameraBirak'); else socket.emit('kameraIzle');
+});
+
+$(document).ready(async () => {
+  if (!(await pano.hazir)) return;
+  try {
+    const d = await axios.get('/kamera/durum');
+    if (!d.data.tanimli) return;
+  } catch (e) {
+    return;
+  }
+  kameraAcik = true;
+  $('.kameraKutu').show();
+  kameraIzle();
+});

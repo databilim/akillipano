@@ -27,7 +27,10 @@
    </div>
       
    <div class="orta">
-      <iframe width="640"  height="300"  src="https://cam.66.tr/" frameborder="0"></iframe>
+      <div class="kameraKutu" style="display:none">
+        <img id="kameraCanli" alt="Kamera">
+        <div class="kameraDurum">Kamera bağlanıyor…</div>
+      </div>
    </div>
 
  
@@ -35,7 +38,7 @@
     <a href="/profil.html"> <div class="altMenu"><span><img src="img/home.svg" alt=""></div></a>
      <a href=""> <div class="altMenu"><span><img src="img/yildiz.svg" alt=""></div></a>
      <a href="#" data-toggle="modal" data-target="#ayarlar"><div class="altMenu"><img src="img/cark.svg" alt=""></div></a> 
-      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu"><img src="img/bildirim.svg" alt=""></div></a>
+      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu bildirimMenu"><img src="img/bildirim.svg" alt=""><span class="rozet" style="display:none"></span></div></a>
    </div>
 
 
@@ -54,6 +57,9 @@
         <div class="modal-body ayarlarListe">
           <a class="sadeceYonetici" style="display:none" href="tanimsiz.html">Tanımsız butonlar</a>
           <a class="sadeceYonetici" style="display:none" href="kullanicilar.html">Kullanıcılar</a>
+          <a class="sadeceYonetici" style="display:none" href="kamera.html">Kamera ayarları</a>
+          <a class="sadeceYonetici" style="display:none" href="sistem.html">Sistem güncelleme</a>
+          <a href="zil.html">Zil kayıtları</a>
           <a href="kullanicilar.html#sifre">Şifremi değiştir</a>
           <a href="#" onclick="return cikisYap(event)">Çıkış yap</a>
         </div>
@@ -73,9 +79,8 @@
         </button>
       </div>
       <div class="modal-body">
-        Bildirimler     
-      
-      
+        <div class="zilSonlar">Henüz zil kaydı yok</div>
+        <a class="d-block mt-2" href="zil.html">Tüm zil kayıtları</a>
       </div>
     </div>
   </div>
