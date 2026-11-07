@@ -1,0 +1,9 @@
+<img width="100%"   id="img">
+<script src="/socket.io/socket.io.js"></script>
+<script>
+	var img = document.getElementById('img'),
+		socket = io('');
+	socket.on('data', function(data) {
+		img.src = 'data:image/jpeg;base64,' + data;
+	});
+</script>

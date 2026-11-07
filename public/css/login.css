@@ -1,0 +1,54 @@
+.loginUst{
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    align-items: center;
+}
+.logo img{
+    width: 300px;
+}
+a{
+    color: #43d37d;
+}
+a:hover{
+    color: #ebebeb;
+}
+.logingovde{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    height: 300px;
+}
+.loginInput{
+
+    width: 300px;
+    height: 50px;
+    border: solid 1px #43D37D;
+    border-radius: 3px;
+}
+.loginGiris{
+
+    background-color: #43D37D;
+    width: 300px;
+    border: 0px;
+    color: #000;
+    height: 50px;
+    border-radius: 3px;
+    
+}
+.loginAlt{
+    display: flex;
+    width: 100%;
+    position: fixed;
+    bottom: 0px;
+    font-weight: 100;
+    font-size: 10px;
+    height: 25px;
+
+ 
+    background-color: #000;
+    color: #fff;
+    justify-content: center;
+    align-items: center;
+}

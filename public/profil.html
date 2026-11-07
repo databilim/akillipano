@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.css" >
+    <link rel="stylesheet" href="/css/style.css" >
+    <link rel="stylesheet" href="/css/profil.css" >
+    <script src="/js/jquery.js"></script>
+    <script src="/js/axios.js"></script>
+    <script src="/js/moment.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Akllı Kontrol Paneli </title>
+  </head>
+  <body>
+
+  
+   <div class="ust">
+
+        <div class="ustMenu connect "> <img width="35" src="/img/connect.svg" alt="">  </div>
+        <div class="ustMenu logo" > <img width="100" src="/img/logo-beyaz.svg" alt=""></div>
+        <div class="ustMenu zaman">  <span class="havaDurumu" style=" margin-right: 10px; color: #929292;">12</span>    <span><img width="25" src="img/derece.svg" alt=""></span>  <span class="time" ></span>   </div>
+        
+   </div>
+      
+   <div class="orta">
+      <iframe width="640"  height="300"  src="https://cam.66.tr/" frameborder="0"></iframe>
+   </div>
+
+ 
+   <div class="alt">
+    <a href="/profil.html"> <div class="altMenu"><span><img src="img/home.svg" alt=""></div></a>
+     <a href=""> <div class="altMenu"><span><img src="img/yildiz.svg" alt=""></div></a>
+     <a href="#" data-toggle="modal" data-target="#ayarlar"><div class="altMenu"><img src="img/cark.svg" alt=""></div></a> 
+      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu"><img src="img/bildirim.svg" alt=""></div></a>
+   </div>
+
+
+
+
+   <!-- Modal ayarlar -->
+   <div class="modal fade" id="ayarlar" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <a href="tanimsiz.html">Tanimsızlar</a>     
+            
+        
+        
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Save changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+   <!-- Modal bildirimler -->
+<div class="modal fade" id="bildirimler" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Bildirimler     
+      
+      
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+ 
+   
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  
+   
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/bootstrap.bundle.js"></script>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/modul/socket.js"></script>
+    <script src="/js/modul/lib.js"></script>
+  
+   
+    <script src="/js/modul/profil.js"></script>
+
+
+   
+  </body>
+</html>
