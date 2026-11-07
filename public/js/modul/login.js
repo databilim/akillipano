@@ -19,5 +19,5 @@ $(document).ready(async () => {
 });
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {});
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then((k) => k.update()).catch(() => {});
 }

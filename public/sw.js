@@ -1,7 +1,7 @@
 // Ana ekrana eklenen uygulama için service worker.
-// Sayfa ve API istekleri her zaman ağdan gelir (pano durumu güncel olmalı);
-// yalnızca css/js/resim dosyaları önbellekten hızlı açılır, arka planda yenilenir.
-const ONBELLEK = 'pano-statik-v2';
+// Her şey önce ağdan istenir; yalnızca ağ yoksa (Pi kapalı, internet yok) önbellekteki
+// css/js/resim kullanılır. Böylece güncellemeden sonra hiçbir zaman eski dosya çalışmaz.
+const ONBELLEK = 'pano-statik-v3';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
@@ -15,12 +15,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(istek.url);
   if (istek.method !== 'GET' || url.origin !== self.location.origin) return;
   if (!/^\/(css|js|img)\//.test(url.pathname)) return;
-  event.respondWith(caches.open(ONBELLEK).then(async (onbellek) => {
-    const kayitli = await onbellek.match(istek);
-    const agdan = fetch(istek).then((cevap) => {
-      if (cevap.ok) onbellek.put(istek, cevap.clone());
-      return cevap;
-    }).catch(() => kayitli);
-    return kayitli || agdan;
-  }));
+  event.respondWith(fetch(istek).then((cevap) => {
+    if (cevap.ok) {
+      const kopya = cevap.clone();
+      caches.open(ONBELLEK).then((c) => c.put(istek, kopya));
+    }
+    return cevap;
+  }).catch(() => caches.match(istek)));
 });

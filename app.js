@@ -26,8 +26,13 @@ const oturum = session({
 app.disable('x-powered-by');
 // Dosyalar her açılışta sunucuya sorulur (değişmediyse 304 döner). Cloudflare ya da tarayıcı
 // önbelleği güncellemeden sonra eski dosyaları göstermesin diye.
+// Service worker dosyası hiçbir yerde önbelleğe alınmaz ki güncellemesi hemen yayılsın
+app.get('/sw.js', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
 app.use(express.static(path.join(__dirname, 'public'), {
-    setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+    setHeaders: (res, dosya) => res.setHeader('Cache-Control', dosya.endsWith('sw.js') ? 'no-store' : 'no-cache'),
 }));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
