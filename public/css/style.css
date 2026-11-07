@@ -92,3 +92,93 @@ h3{
 .modal-content {
     color: #4E4E4E;
 }
+/* Bağlantı uyarısı ve bildirimler */
+.baglantiUyari {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background-color: #c62828;
+    color: #fff;
+    font-weight: 400;
+    font-size: 14px;
+    padding: 8px 16px;
+    text-align: center;
+}
+.bildirimKutu {
+    position: fixed;
+    left: 50%;
+    bottom: 70px;
+    transform: translateX(-50%);
+    z-index: 2001;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    max-width: 90%;
+}
+.input.hatali { border-color: #c62828; }
+.input a { cursor: pointer; }
+
+/* Kullanıcılar sayfası */
+.kullaniciPanel {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 16px auto;
+    width: 100%;
+    max-width: 720px;
+}
+.kullaniciPanel h2 { font-size: 18px; font-weight: 400; }
+.kullaniciPanel table { width: 100%; font-size: 14px; }
+.kullaniciPanel td, .kullaniciPanel th { padding: 6px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
+.kullaniciPanel .btn { margin: 2px 0; }
+.ayarlarListe a { display: block; padding: 10px 0; border-bottom: 1px solid #eee; }
+
+/* Kamera */
+.kameraKutu {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    margin: 16px auto 0;
+    background-color: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 120px;
+}
+.kameraKutu img { display: block; width: 100%; height: auto; }
+.kameraKutu img:not([src]) { aspect-ratio: 16 / 9; }
+.kameraYukleniyor {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; color: #ddd; font-size: 14px;
+}
+.kameraDurum {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 6px 12px; font-size: 13px; background: rgba(0, 0, 0, 0.6); color: #fff;
+}
+.bildirimMenu { position: relative; }
+.rozet {
+    position: absolute; top: 6px; right: 28px;
+    background: #c62828; color: #fff; border-radius: 10px;
+    font-size: 11px; padding: 0 6px; line-height: 18px;
+}
+.zilSatir { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid #eee; color: #333; }
+.zilSatir img { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; margin-right: 10px; background: #000; }
+.zilGaleri { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.zilKart { display: block; color: #333; font-size: 13px; }
+.zilKart img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #000; }
+
+/* Favori yıldızı */
+.input { position: relative; }
+.favoriButon {
+    position: absolute; top: 6px; right: 10px;
+    background: none; border: 0; padding: 4px;
+    font-size: 22px; line-height: 1; color: #bbb; cursor: pointer;
+}
+.favoriButon.secili { color: #FFD645; }
+.kullaniciPanel td.text-right { white-space: nowrap; }

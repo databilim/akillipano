@@ -1,0 +1,17 @@
+{
+  "name": "Akıllı Pano",
+  "short_name": "Akıllı Pano",
+  "description": "Akıllı elektrik panosu kontrolü",
+  "lang": "tr",
+  "start_url": "/profil.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1620",
+  "theme_color": "#0b1620",
+  "icons": [
+    { "src": "/img/ikon/ikon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/img/ikon/ikon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/img/ikon/ikon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

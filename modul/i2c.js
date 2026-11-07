@@ -1,138 +1,180 @@
+// I2C üzerinden Arduino kartlarıyla haberleşme.
+//
+// Protokol (Arduino tarafı değişmedi):
+//   Röle kartı (varsayılan adres 100): 9 baytlık blok yazılır: [0, komut, 0, 0, 0, 0, 0, 0, 0].
+//     komut = (9 + kanal) * 10 + durum   ->  kanal 1 aç = 101, kanal 1 kapat = 100, kanal 16 aç = 251
+//   Buton kartı (varsayılan adres 10): 2 bayt okunur. "01ff" = buton 1 ... "10ff" = buton 16.
+//
+// Bu modül hataları yutmaz: her işlem {ok, hata} döner ve bağlantı durumu değiştiğinde
+// "durum" olayı yayınlanır. Arayüz bu olayla "I2C bağlantısı yok" uyarısını gösterir.
+const EventEmitter = require('events');
+const ayarlar = require('./ayarlar');
 
+const KANAL_SAYISI = ayarlar.kanalSayisi;
 
-const i2c = require('i2c-bus');
-const i2cBusNumber = 1;
-const i2c1 = i2c.openSync(1); 
-  
+const roleKomutu = (kanal, durum) => (9 + kanal) * 10 + (durum ? 1 : 0);
 
-  module.exports = {
-    
-    i2cScan: ()=>{
-        i2c.openPromisified(i2cBusNumber)
-            .then((i2c1) => {
-   
-                // I2C adreslerini listeleme
-                return i2c1.scan()
-                .then((addresses) => {
-                    console.log('Found devices at addresses:', addresses);
-                })
-                .finally(() => i2c1.close());
-            })
-            .catch((err) => {
-                console.error('Error:', err);
-            });
-    },
- 
-    i2cDataGonder:  (address, data)=>{
+// Buton kodu -> buton numarası ("01ff" -> 1, "10ff" -> 16)
+const butonCoz = (hex) => {
+    if (typeof hex !== 'string' || !/^[0-9a-f]{2}ff$/.test(hex)) return null;
+    const no = parseInt(hex.slice(0, 2), 16);
+    return no >= 1 && no <= KANAL_SAYISI ? { input: no, hex } : null;
+};
 
-        try {
-          const buffer = Buffer.alloc(8);
-          buffer.writeUInt8(data);
-          i2c1.writeI2cBlockSync(address, 0, buffer.length, buffer);
-          i2c1.closeSync();
-        } catch (error) {
-            return " Adres hatası ";
+const kanalGecerliMi = (kanal) => Number.isInteger(kanal) && kanal >= 1 && kanal <= KANAL_SAYISI;
+
+// Donanım olmadan çalışmak ve test için sahte bus
+class SimulasyonBus {
+    constructor() {
+        this.roleler = new Array(KANAL_SAYISI + 1).fill(0);
+        this.bekleyenButon = null;
+        this.bagli = true;
+        this.yazilanlar = [];
+    }
+    kontrol(addr) {
+        if (!this.bagli) {
+            const e = new Error(`Remote I/O error (adres ${addr})`);
+            e.code = 'EREMOTEIO';
+            throw e;
         }
-      },
-      i2cDataOku : (address) =>{
-        // I2C üzerinden veri okuma
+    }
+    writeI2cBlockSync(addr, cmd, length, buffer) {
+        this.kontrol(addr);
+        const komut = buffer[0];
+        this.yazilanlar.push(komut);
+        const kanal = Math.floor(komut / 10) - 9;
+        if (kanalGecerliMi(kanal)) this.roleler[kanal] = komut % 10;
+    }
+    i2cReadSync(addr, length, buffer) {
+        this.kontrol(addr);
+        const hex = this.bekleyenButon || '00ff';
+        Buffer.from(hex, 'hex').copy(buffer);
+        return length;
+    }
+    scanSync(baslangic) {
+        return this.bagli ? [baslangic] : [];
+    }
+}
+
+class I2C extends EventEmitter {
+    constructor() {
+        super();
+        this.bus = null;
+        this.durum = {
+            bagli: false,
+            roleKarti: false,
+            butonKarti: false,
+            sonHata: null,
+            sonHataZamani: null,
+            simulasyon: ayarlar.i2c.simulasyon,
+        };
+        this.hataSayaci = { role: 0, buton: 0 };
+        this.ac();
+    }
+
+    ac() {
         try {
-          const buffer = Buffer.alloc(2);
-          i2c1.i2cReadSync(address, buffer.length, buffer);
-          
-              return  buffer .toString("hex") ;
-        } catch (error) {
-    
-          return ` ${address} Numaralı  Böyle bir adres yok `;
-    
+            if (ayarlar.i2c.simulasyon) {
+                this.bus = new SimulasyonBus();
+            } else {
+                // Bus bir kez açılır ve açık kalır (eskiden her yazmada kapatılıyordu)
+                this.bus = require('i2c-bus').openSync(ayarlar.i2c.bus);
+            }
+            return true;
+        } catch (e) {
+            this.bus = null;
+            this.hataKaydet('role', e);
+            this.hataKaydet('buton', e);
+            return false;
         }
-            
-    },
-      searchButtonType : (type) =>{
-        let buttonArray = [
-            {
-              type:"01ff",
-              input:"1"
-            },
-            {
-              type:"02ff",
-              input:"2"
-            },
-            {
-              type:"03ff",
-              input:"3"
-            },
-            {
-              type:"04ff",
-              input:"4"
-            },
-            {
-              type:"05ff",
-              input:"5"
-            },
-            {
-              type:"06ff",
-              input:"6"
-            },
-            {
-              type:"07ff",
-              input:"7"
-            },
-            {
-              type:"08ff",
-              input:"8"
-            },
-            {
-              type:"09ff",
-              input:"9"
-            },
-            {
-              type:"0aff",
-              input:"10"
-            },
-            {
-              type:"0bff",
-              input:"11"
-            },
-            {
-              type:"0cff",
-              input:"12"
-            },
-            {
-              type:"0dff",
-              input:"13"
-            },
-            {
-              type:"0eff",
-              input:"14"
-            },
-            {
-              type:"0fff",
-              input:"15"
-            },
-            {
-              type:"10ff",
-              input:"16"
-            },
-            {
-              type:"0dff",
-              input:"13"
-            }
-            ,
-            {
-              type:"ccc",
-              input:"000"
-            }
-            
-          ];
-        const foundButton = buttonArray.find(item => item.type === type);
-    
-        return foundButton;
-     
-    
-    },
-  
+    }
 
+    hataKaydet(kart, e) {
+        this.hataSayaci[kart] += 1;
+        this.durum.sonHata = `${kart === 'role' ? 'Röle' : 'Buton'} kartı: ${e.message}`;
+        this.durum.sonHataZamani = new Date().toISOString();
+        if (this.hataSayaci[kart] >= ayarlar.i2c.hataEsigi) this.kartDurumu(kart, false);
+    }
 
-  
-  }
+    basariKaydet(kart) {
+        this.hataSayaci[kart] = 0;
+        this.kartDurumu(kart, true);
+    }
+
+    kartDurumu(kart, bagli) {
+        const alan = kart === 'role' ? 'roleKarti' : 'butonKarti';
+        const onceki = this.durum.bagli;
+        const oncekiKart = this.durum[alan];
+        this.durum[alan] = bagli;
+        this.durum.bagli = this.durum.roleKarti && this.durum.butonKarti;
+        if (onceki !== this.durum.bagli || oncekiKart !== bagli) {
+            if (!bagli) console.error(`I2C: ${kart === 'role' ? 'röle' : 'buton'} kartına ulaşılamıyor. ${this.durum.sonHata || ''}`);
+            else console.log(`I2C: ${kart === 'role' ? 'röle' : 'buton'} kartı bağlı`);
+            this.emit('durum', this.durumGetir());
+        }
+    }
+
+    durumGetir() {
+        return { ...this.durum };
+    }
+
+    // Tek bir röle kanalını aç/kapat. Hata olursa {ok:false, hata} döner.
+    roleYaz(kanal, durum) {
+        if (!kanalGecerliMi(kanal)) return { ok: false, hata: `Geçersiz kanal: ${kanal}` };
+        if (!this.bus && !this.ac()) return { ok: false, hata: 'I2C bus açılamadı' };
+        try {
+            const buffer = Buffer.alloc(8);
+            buffer.writeUInt8(roleKomutu(kanal, durum));
+            this.bus.writeI2cBlockSync(ayarlar.i2c.roleAdres, 0, buffer.length, buffer);
+            this.basariKaydet('role');
+            return { ok: true };
+        } catch (e) {
+            // Tek bir yazma hatası bile komutun gitmediği anlamına gelir; eşiği beklemeden bildir
+            this.hataKaydet('role', e);
+            this.kartDurumu('role', false);
+            return { ok: false, hata: e.message };
+        }
+    }
+
+    // Buton kartından okunan ham kod ("01ff" gibi). Hata olursa null.
+    butonOku() {
+        if (!this.bus && !this.ac()) return null;
+        try {
+            const buffer = Buffer.alloc(2);
+            this.bus.i2cReadSync(ayarlar.i2c.butonAdres, buffer.length, buffer);
+            this.basariKaydet('buton');
+            return buffer.toString('hex');
+        } catch (e) {
+            this.hataKaydet('buton', e);
+            return null;
+        }
+    }
+
+    // Röle kartının hatta olup olmadığını yoklar (butona basılmasa da bağlantı kopukluğu fark edilsin diye)
+    roleKartiniYokla() {
+        if (!this.bus && !this.ac()) return false;
+        try {
+            const adres = ayarlar.i2c.roleAdres;
+            const bulunan = this.bus.scanSync(adres, adres);
+            if (bulunan.includes(adres)) {
+                this.basariKaydet('role');
+                return true;
+            }
+            this.hataKaydet('role', new Error(`adres ${adres} yanıt vermiyor`));
+            return false;
+        } catch (e) {
+            this.hataKaydet('role', e);
+            return false;
+        }
+    }
+
+    tara() {
+        if (!this.bus && !this.ac()) return [];
+        return this.bus.scanSync();
+    }
+}
+
+module.exports = new I2C();
+module.exports.roleKomutu = roleKomutu;
+module.exports.butonCoz = butonCoz;
+module.exports.kanalGecerliMi = kanalGecerliMi;

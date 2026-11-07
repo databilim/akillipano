@@ -1,189 +1,114 @@
 const express = require('express');
-const moment = require("moment");
-const axios = require('axios');
-const os = require('os');
-const session = require('express-session');
 const http = require('http');
-const socketIo = require('socket.io');
-//const io = require('socket.io-client');
-const rtsp = require('rtsp-ffmpeg');
 const path = require('path');
+const session = require('express-session');
+const { Server } = require('socket.io');
 
+const ayarlar = require('./modul/ayarlar');
+const vt = require('./modul/veritabani');
+const i2c = require('./modul/i2c');
+const pano = require('./modul/pano');
+const kamera = require('./modul/kamera');
+const { oturumuDogrula } = require('./modul/yetki');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = new Server(server);
 
-// Sunucuyu başlatmak için kullanılacak port
-const PORT = process.env.PORT || 80;
-
-// Static dosyaları sunmak için Express middleware'i kullanın
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-const lib = require('./modul/i2c');
-const db = require("./modul/sqlite.js");
-//const hd = require("./modul/havadurumu.js");
-const aktif = require("./modul/aktifolanlar.js")(io);
-
- // Burası express  session 
- app.use(session({
-    secret: 'secret-key',
+const oturum = session({
+    name: 'pano.sid',
+    secret: ayarlar.oturumAnahtari,
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: 'lax', maxAge: 30 * 24 * 60 * 60 * 1000 },
+});
+
+app.disable('x-powered-by');
+// Dosyalar her açılışta sunucuya sorulur (değişmediyse 304 döner). Cloudflare ya da tarayıcı
+// önbelleği güncellemeden sonra eski dosyaları göstermesin diye.
+// Service worker dosyası hiçbir yerde önbelleğe alınmaz ki güncellemesi hemen yayılsın
+app.get('/sw.js', (req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+});
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res, dosya) => res.setHeader('Cache-Control', dosya.endsWith('sw.js') ? 'no-store' : 'no-cache'),
 }));
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+app.use(oturum);
 
-const login = require('./router/login');
-const profil = require('./router/profil');
-const { json } = require('body-parser');
+app.use('/login', require('./router/login'));
+app.use('/profil', require('./router/profil'));
+app.use('/kullanici', require('./router/kullanici'));
+app.use('/kamera', require('./router/kamera'));
+app.use('/sistem', require('./router/sistem'));
 
-app.use('/login', login);
-app.use('/profil', profil);
+// Beklenmeyen hatalar sunucuyu durdurmaz, istemciye düzgün yanıt döner
+app.use((err, req, res, next) => {
+    console.error('İstek hatası:', err);
+    res.status(500).json({ status: 0, message: 'Sunucu hatası' });
+});
 
-let isButtonPressed = false;
-
-// Socket.IO bağlantısını dinleyin
+// Socket.IO aynı oturumu kullanır: giriş yapmamış biri röle tetikleyemez
+io.engine.use(oturum);
+io.use(async (socket, next) => {
+    try {
+        if (await oturumuDogrula(socket.request.session)) return next();
+    } catch (e) {
+        console.error('Socket oturum hatası:', e.message);
+    }
+    next(new Error('yetkisiz'));
+});
 
 io.on('connection', (socket) => {
+    socket.emit('sistemDurumu', { i2c: i2c.durumGetir() });
 
-    console.log('a user connected', socket.id);
-    socket.on('disconnect', () => {
-      console.log('user disconnected',socket.id);
-    });
-
-
-    socket.on("start", async (out)=>{
-        let inputSor = JSON.parse(out)
-        //console.log(inputSor)
-        let outputs = JSON.parse(inputSor.output)
-       if(inputSor.status=="0"){
-          
-                outputs.forEach((ac)=>{
-
-                  console.log("aktif olan açılışta ",ac )
-                    lib.i2cDataGonder(100,`${9+ac}${1}`) 
-                     db.guncelleID("io",inputSor.ID,{
-                        status:1
-                     }).then((gdata)=>{
-                        inputSor.status=1
-                        io.emit("input",inputSor)
-                            console.log(gdata)
-                     })
-                })
-       }else if(inputSor.status=="1"){
-        outputs.forEach((ac)=>{
-
-            console.log("aktif olan açılışta ",ac )
-            lib.i2cDataGonder(100,`${9+ac}${0}`) 
-             db.guncelleID("io",inputSor.ID,{
-                status:0
-             }).then((gdata)=>{
-                inputSor.status=0
-                io.emit("input",inputSor)
-                    
-             })
-        })
- 
-
-       }
-
-    })
-
-
-
-
-}) 
-
-
-setInterval( async () => {
-    var input1 = lib.searchButtonType(lib.i2cDataOku(10));
-
-    if (input1) {
-
-        if (!isButtonPressed) {
-          
-          let inputSor = await  db.list(`select * from io WHERE input = "${input1.input}" `) ;
-            if(inputSor.length>0){
-                console.log("Bu Buton Daha önce Eklendi")
-                let outputs = JSON.parse(inputSor[0].output)
-                if(inputSor[0].durum==1){
-                    if(inputSor[0].status==0){
-                        console.log("Lambayı Aç")
-
-
-                    await db.guncelleID("io",inputSor[0].ID,{status:1}).then((insor)=>{
-                        
-                            console.log("sttaus 1 olarak güncellendi")
-                        }).catch((err)=>{
-                            console.log("sttaus 1 hata")
-                        }).finally(()=>{
-                            outputs.forEach((ac)=>{
-                                lib.i2cDataGonder(100,`${9+ac}${1}`) 
-                                //
-                            })
-                            inputSor[0].status = 1
-                            io.emit("input",inputSor[0])
-                            console.log("atatus 1 final")
-                        })
-
-
-                    }else if(inputSor[0].status==1){
-
-                        await db.guncelleID("io",inputSor[0].ID,{status:0}).then((insor)=>{
-                        
-                            console.log("sttaus 0 olarak güncellendi")
-                        }).catch((err)=>{
-                            console.log("sttaus 0 hata")
-                        }).finally(()=>{
-                            outputs.forEach((ac)=>{
-                                lib.i2cDataGonder(100,`${9+ac}${0}`) 
-                                //
-                            })
-                            inputSor[0].status = 0
-                            io.emit("input",inputSor[0])
-                            console.log("atatus 0 final")
-                        })
-                    }
-                
-                }else{
-                        console.log("Tanımsız bir  button bunu tanımla = ",input1)
-                }
-                   
-
-            }else{
-             await   db.ekle("io",{
-                    input:input1.input,
-                    hex:input1.type,
-                    adres:10,
-                    status:0,
-                    durum:0
-                })
-
-
-
+    // İstemci yalnızca kaydın ID'sini gönderir; hangi rölenin tetikleneceği veritabanından okunur.
+    // Eski arayüzle uyum için JSON metin ya da nesne kabul edilir.
+    socket.on('start', async (veri, cevap) => {
+        const yanit = typeof cevap === 'function' ? cevap : () => {};
+        try {
+            if (!(await oturumuDogrula(socket.request.session))) {
+                yanit({ ok: false, hata: 'Oturum süresi doldu' });
+                return socket.disconnect(true);
             }
-
-       
-            isButtonPressed = true;
-             
-            setTimeout(() => {
-                // Belirli bir süre sonra isButtonPressed'i sıfırla
-         
-                isButtonPressed = false;
-            }, 1000); // Örnek olarak 1 saniye boyunca başka basışları göz ardı et
-        
+            const obj = typeof veri === 'string' ? JSON.parse(veri) : veri;
+            const ID = parseInt(obj && obj.ID, 10);
+            if (!Number.isInteger(ID)) return yanit({ ok: false, hata: 'Geçersiz istek' });
+            const sonuc = await pano.degistir(ID);
+            if (!sonuc.ok) socket.emit('hata', { ID, mesaj: sonuc.hata });
+            yanit({ ok: sonuc.ok, hata: sonuc.hata });
+        } catch (e) {
+            yanit({ ok: false, hata: 'Geçersiz istek' });
         }
-
-    }
-
-},100)
-
-
- 
-
-
-// Sunucuyu başlatın
-server.listen(PORT, () => {
-    console.log(`Sunucu ${PORT} numaralı portta başlatıldı`);
+    });
 });
+
+pano.olaylar.on('input', (kayit) => io.emit('input', kayit));
+pano.olaylar.on('hata', (h) => io.emit('hata', h));
+i2c.on('durum', (durum) => io.emit('sistemDurumu', { i2c: durum }));
+
+// Zile basılınca (duvar butonu ya da ekran) kameradan fotoğraf alınır
+pano.olaylar.on('zilCaldi', (kayit) => kamera.zilFotografi(kayit.adi));
+kamera.olaylar.on('zilFotografi', (k) => io.emit('zilFotografi', k));
+kamera.olaylar.on('hata', (h) => io.emit('hata', h));
+
+process.on('unhandledRejection', (e) => console.error('Yakalanmamış hata:', e));
+
+const basla = async () => {
+    await vt.hazir;
+    await pano.baslat();
+    server.listen(ayarlar.port, () => {
+        console.log(`Sunucu ${ayarlar.port} numaralı portta başlatıldı${ayarlar.i2c.simulasyon ? ' (I2C simülasyon modu)' : ''}`);
+    });
+};
+
+if (require.main === module) {
+    basla().catch((e) => {
+        console.error('Başlatılamadı:', e);
+        process.exit(1);
+    });
+}
+
+module.exports = { app, server, io, basla };

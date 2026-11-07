@@ -1,36 +1,51 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
+const vt = require('../modul/veritabani');
+const ayarlar = require('../modul/ayarlar');
+
 const router = express.Router();
-const db = require("../modul/sqlite.js");
-router.post("/", async (req,res)=>{
-    const {user,parola}= req.body;
-   // console.log(req.params)
 
-  let usercek = await db.list(`select * from user where user="${user}" AND password ="${parola}"`);
+// Basit kaba kuvvet koruması: aynı IP'den 5 hatalı denemeden sonra 1 dakika bekletir
+const denemeler = new Map();
+const MAKS_DENEME = 5;
+const KILIT_MS = 60 * 1000;
 
-    
-    if(user == ""){
-        res.json({status:0, message:"Kullanıcı Boş bıraktınız"})
-    }else if (parola=="") {
+router.post('/', async (req, res) => {
+    const user = String((req.body && req.body.user) || '').trim();
+    const parola = String((req.body && req.body.parola) || '');
 
-        res.json({status:0, message:"Parola Boş bıraktınız"})
-    }else{
-        if(usercek.length > 0){
+    if (user === '') return res.json({ status: 0, message: 'Kullanıcı adını boş bıraktınız' });
+    if (parola === '') return res.json({ status: 0, message: 'Parolayı boş bıraktınız' });
 
-            req.session.user = {
-                id: usercek[0].ID,
-                username: usercek[0].password
-            };
-
-            res.json({status:1,usercek})
-        }else{
-            res.json({status:0,message:"Böyle bir uyelik oluşturulmadı"})
-        }
-
+    const ip = (ayarlar.cloudflare && req.get('CF-Connecting-IP')) || req.ip;
+    const kayit = denemeler.get(ip) || { sayi: 0, zaman: 0 };
+    if (kayit.sayi >= MAKS_DENEME && Date.now() - kayit.zaman < KILIT_MS) {
+        return res.status(429).json({ status: 0, message: 'Çok fazla hatalı deneme. 1 dakika sonra tekrar deneyin.' });
     }
 
-   
-    
-})
+    try {
+        const k = await vt.kullanici.adIleGetir(user);
+        const dogru = k && k.durum != 0 && k.password && await bcrypt.compare(parola, k.password);
+        if (!dogru) {
+            denemeler.set(ip, { sayi: kayit.sayi + 1, zaman: Date.now() });
+            return res.json({ status: 0, message: 'Kullanıcı adı ya da şifre hatalı' });
+        }
+        denemeler.delete(ip);
 
+        // Oturum sabitleme saldırısına karşı oturum kimliği yenilenir
+        req.session.regenerate((err) => {
+            if (err) return res.status(500).json({ status: 0, message: 'Oturum açılamadı' });
+            req.session.user = { id: k.ID, user: k.user, yetki: k.yetki || 'kullanici' };
+            res.json({ status: 1, kullanici: vt.kullanici.temizle(k) });
+        });
+    } catch (e) {
+        console.error('Giriş hatası:', e.message);
+        res.status(500).json({ status: 0, message: 'Sunucu hatası' });
+    }
+});
+
+router.post('/cikis', (req, res) => {
+    req.session.destroy(() => res.json({ status: 1 }));
+});
 
 module.exports = router;

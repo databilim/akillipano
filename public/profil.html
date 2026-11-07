@@ -1,9 +1,17 @@
 <!doctype html>
-<html lang="en">
+<html lang="tr">
   <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0b1620">
+    <link rel="icon" type="image/png" sizes="192x192" href="/img/ikon/ikon-192.png">
+    <link rel="apple-touch-icon" href="/img/ikon/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Akıllı Pano">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="/css/bootstrap.css" >
@@ -13,7 +21,7 @@
     <script src="/js/axios.js"></script>
     <script src="/js/moment.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <title>Akllı Kontrol Paneli </title>
+    <title>Akıllı Kontrol Paneli </title>
   </head>
   <body>
 
@@ -27,15 +35,19 @@
    </div>
       
    <div class="orta">
-      <iframe width="640"  height="300"  src="https://cam.66.tr/" frameborder="0"></iframe>
+      <div class="kameraKutu" style="display:none">
+        <div class="kameraYukleniyor"><div class="spinner-border text-light" role="status"></div><span>Kamera yükleniyor…</span></div>
+        <img id="kameraCanli" alt="">
+        <div class="kameraDurum" style="display:none"></div>
+      </div>
    </div>
 
  
    <div class="alt">
     <a href="/profil.html"> <div class="altMenu"><span><img src="img/home.svg" alt=""></div></a>
-     <a href=""> <div class="altMenu"><span><img src="img/yildiz.svg" alt=""></div></a>
+     <a href="/profil.html#favoriler"> <div class="altMenu"><span><img src="img/yildiz.svg" alt="Favoriler"></div></a>
      <a href="#" data-toggle="modal" data-target="#ayarlar"><div class="altMenu"><img src="img/cark.svg" alt=""></div></a> 
-      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu"><img src="img/bildirim.svg" alt=""></div></a>
+      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu bildirimMenu"><img src="img/bildirim.svg" alt=""><span class="rozet" style="display:none"></span></div></a>
    </div>
 
 
@@ -46,20 +58,20 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+          <h5 class="modal-title">Ayarlar</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
-          <a href="tanimsiz.html">Tanimsızlar</a>     
-            
-        
-        
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-          <button type="button" class="btn btn-primary">Save changes</button>
+        <div class="modal-body ayarlarListe">
+          <a class="sadeceYonetici" style="display:none" href="tanimsiz.html">Butonlar</a>
+          <a class="sadeceYonetici" style="display:none" href="kullanicilar.html">Kullanıcılar</a>
+          <a class="sadeceYonetici" style="display:none" href="kamera.html">Kamera ayarları</a>
+          <a class="sadeceYonetici" style="display:none" href="sistem.html">Sistem güncelleme</a>
+          <a href="zil.html">Zil kayıtları</a>
+          <a href="kullanicilar.html#sifre">Şifremi değiştir</a>
+          <a href="#" class="anaEkranaEkle" onclick="return anaEkranaEkle(event)">Ana ekrana ekle</a>
+          <a href="#" onclick="return cikisYap(event)">Çıkış yap</a>
         </div>
       </div>
     </div>
@@ -71,41 +83,22 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Modal title</h5>
+        <h5 class="modal-title">Bildirimler</h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
       <div class="modal-body">
-        Bildirimler     
-      
-      
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Save changes</button>
+        <div class="zilSonlar">Henüz zil kaydı yok</div>
+        <a class="d-block mt-2" href="zil.html">Tüm zil kayıtları</a>
       </div>
     </div>
   </div>
 </div>
-
- 
-   
-
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-  
-   
-    <script src="/js/bootstrap.js"></script>
-    <script src="/js/bootstrap.bundle.js"></script>
     <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
     <script src="/js/modul/socket.js"></script>
     <script src="/js/modul/lib.js"></script>
-  
-   
     <script src="/js/modul/profil.js"></script>
-
-
-   
   </body>
 </html>

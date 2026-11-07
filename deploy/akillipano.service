@@ -1,0 +1,24 @@
+# Kurulum:
+#   sudo cp deploy/akillipano.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now akillipano
+# Kayıtlar: journalctl -u akillipano -f
+[Unit]
+Description=Akilli Pano
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=i2c
+WorkingDirectory=/home/pi/pano
+ExecStart=/usr/bin/node app.js
+Restart=always
+RestartSec=3
+Environment=NODE_ENV=production
+# root olmadan 80 portunu açabilmek için
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
