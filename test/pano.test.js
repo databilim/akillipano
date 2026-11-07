@@ -217,3 +217,51 @@ test('kullanıcı yönetimi ve yetkiler', async () => {
     assert.strictEqual(r.veri.status, 1);
     assert.strictEqual((await istek('/kullanici/1', { method: 'DELETE', cerez: admin })).durum, 400);
 });
+
+test('buton ekleme, düzenleme, sıralama ve silme (yönetici)', async () => {
+    const admin = await girisYap('yonetici', 'eski123');
+
+    // Yalnızca ekrandan kontrol edilen yeni kayıt, sıra 1
+    let r = await istek('/profil/input/yeni', { method: 'POST', cerez: admin, body: { adi: 'Bahçe', tipi: 'lamba', output: '[12]', buton: 0, sira: 1 } });
+    assert.strictEqual(r.veri.status, 1);
+    const bahce = r.veri.kayit;
+    assert.strictEqual(bahce.hex, null);
+    assert.strictEqual(bahce.durum, 1);
+
+    // Sıra numarasına göre listelenir
+    const liste = (await istek('/profil/input', { cerez: admin })).veri;
+    assert.strictEqual(liste[0].ID, bahce.ID);
+
+    // Aynı duvar butonu iki kayda verilemez (02ff = Çocuk Odası)
+    r = await istek('/profil/input', { method: 'POST', cerez: admin, body: { ID: bahce.ID, buton: 2 } });
+    assert.strictEqual(r.durum, 409);
+    r = await istek('/profil/input', { method: 'POST', cerez: admin, body: { ID: bahce.ID, buton: 4, sira: '' } });
+    assert.strictEqual(r.veri.kayit.hex, '04ff');
+    assert.strictEqual(r.veri.kayit.sira, null);
+
+    // Duvar butonu 4'e basınca bu kayıt çalışır
+    i2c.bus.bekleyenButon = '04ff';
+    await pano.butonTuru();
+    i2c.bus.bekleyenButon = null;
+    await pano.butonTuru();
+    assert.strictEqual((await vt.io.getir(bahce.ID)).status, 1);
+
+    // Kullanıcı silemez, yönetici siler
+    await istek('/kullanici', { method: 'POST', cerez: admin, body: { user: 'mehmet', password: 'mehmet123' } });
+    const kullanici = await girisYap('mehmet', 'mehmet123');
+    assert.strictEqual((await istek(`/profil/input/${bahce.ID}`, { method: 'DELETE', cerez: kullanici })).durum, 403);
+    assert.strictEqual((await istek('/profil/input/yeni', { method: 'POST', cerez: kullanici, body: { adi: 'x', output: '[1]' } })).durum, 403);
+    assert.strictEqual((await istek(`/profil/input/${bahce.ID}`, { method: 'DELETE', cerez: admin })).veri.status, 1);
+    assert.strictEqual(await vt.io.getir(bahce.ID), undefined);
+});
+
+test('favoriler kullanıcıya özeldir', async () => {
+    const admin = await girisYap('yonetici', 'eski123');
+    let r = await istek('/profil/favori/1', { method: 'POST', cerez: admin, body: { favori: true } });
+    assert.deepStrictEqual(r.veri.favoriler, [1]);
+    const kullanici = await girisYap('mehmet', 'mehmet123');
+    assert.deepStrictEqual((await istek('/profil/favori', { cerez: kullanici })).veri.favoriler, []);
+    r = await istek('/profil/favori/1', { method: 'POST', cerez: admin, body: { favori: false } });
+    assert.deepStrictEqual(r.veri.favoriler, []);
+    assert.strictEqual((await istek('/profil/favori/999', { method: 'POST', cerez: admin, body: {} })).durum, 404);
+});

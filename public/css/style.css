@@ -166,3 +166,13 @@ h3{
 .zilGaleri { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .zilKart { display: block; color: #333; font-size: 13px; }
 .zilKart img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #000; }
+
+/* Favori yıldızı */
+.input { position: relative; }
+.favoriButon {
+    position: absolute; top: 6px; right: 10px;
+    background: none; border: 0; padding: 4px;
+    font-size: 22px; line-height: 1; color: #bbb; cursor: pointer;
+}
+.favoriButon.secili { color: #FFD645; }
+.kullaniciPanel td.text-right { white-space: nowrap; }

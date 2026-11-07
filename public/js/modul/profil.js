@@ -7,18 +7,67 @@ const kayitlariGetir = async () => {
   return kayitlar;
 };
 
+let favoriler = new Set();
+
+const favorileriGetir = async () => {
+  try {
+    const cevap = await axios.get('/profil/favori');
+    favoriler = new Set(cevap.data.favoriler);
+  } catch (e) { /* favoriler olmadan devam */ }
+};
+
 const kartHtml = (k) => {
   const durum = kompenant(k).durum;
+  const fav = favoriler.has(k.ID);
   return `
-    <div class="input" id="kart${k.ID}"><a class="komponat" data-id="${k.ID}" onclick="return inputClick(event)" href="#">
+    <div class="input" id="kart${k.ID}">
+      <button type="button" class="favoriButon ${fav ? 'secili' : ''}" data-id="${k.ID}" onclick="return favoriDegistir(event)"
+        title="${fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}" aria-label="Favori">${fav ? '★' : '☆'}</button>
+      <a class="komponat" data-id="${k.ID}" onclick="return inputClick(event)" href="#">
       <img id="in${k.ID}" width="100" src="/img/${kacis(k.tipi)}${durum}.svg" alt="" tabindex="-1"></a>
       <h3>${kacis(k.adi)}</h3>
     </div>`;
 };
 
+const favoriDegistir = async (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const ID = $(event.currentTarget).data('id');
+  const ekle = !favoriler.has(ID);
+  try {
+    const cevap = await axios.post(`/profil/favori/${ID}`, { favori: ekle });
+    favoriler = new Set(cevap.data.favoriler);
+  } catch (e) {
+    return false;
+  }
+  if (!ekle && window.location.hash === '#favoriler') {
+    $('#kart' + ID).remove();
+    if (!$('.orta .input').length) favorilerGoster();
+    return false;
+  }
+  $(`.favoriButon[data-id=${ID}]`).toggleClass('secili', ekle).text(ekle ? '★' : '☆')
+    .attr('title', ekle ? 'Favorilerden çıkar' : 'Favorilere ekle');
+  return false;
+};
+
+// Alt menüdeki yıldız: favoriler
+const favorilerGoster = async () => {
+  await Promise.all([kayitlariGetir(), favorileriGetir()]);
+  $('.orta .input, .orta .bosMesaj').remove();
+  const liste = kayitlar.filter((k) => k.durum == 1 && favoriler.has(k.ID));
+  if (!liste.length) {
+    $('.orta').append('<div class="bosMesaj kullaniciPanel">Henüz favori yok. Bir grubu açıp lamba ya da prizin köşesindeki ☆ simgesine dokunun.</div>');
+    return;
+  }
+  liste.forEach((k) => $('.orta').append(kartHtml(k)));
+};
+
+const sayfaGoster = () => (window.location.hash === '#favoriler' ? favorilerGoster() : gruplariGoster());
+window.addEventListener('hashchange', sayfaGoster);
+
 const gruplariGoster = async () => {
-  await kayitlariGetir();
-  $('.orta .input').remove();
+  await Promise.all([kayitlariGetir(), favorileriGetir()]);
+  $('.orta .input, .orta .bosMesaj').remove();
   const tipler = [];
   kayitlar.forEach((k) => {
     if (k.durum === 1 && k.tipi && !tipler.includes(k.tipi)) tipler.push(k.tipi);
@@ -36,7 +85,7 @@ const gruplarListele = async (event) => {
   event.preventDefault();
   const tipi = $(event.currentTarget).data('tipi');
   await kayitlariGetir();
-  $('.orta .input').remove();
+  $('.orta .input, .orta .bosMesaj').remove();
   kayitlar.filter((k) => k.tipi == tipi && k.durum == 1).forEach((k) => $('.orta').append(kartHtml(k)));
   return false;
 };
@@ -70,7 +119,7 @@ socket.on('connect', () => {
 });
 
 $(document).ready(async () => {
-  if (await pano.hazir) gruplariGoster();
+  if (await pano.hazir) sayfaGoster();
 });
 
 // --- Canlı kamera ---

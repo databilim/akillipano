@@ -19,7 +19,7 @@ const tek = (sql, params = []) => new Promise((resolve, reject) => {
 });
 
 // Güncellenebilecek sütunlar (izin listesi)
-const IO_SUTUNLAR = ['adi', 'tipi', 'adres', 'durum', 'output', 'status', 'input', 'hex'];
+const IO_SUTUNLAR = ['adi', 'tipi', 'adres', 'durum', 'output', 'status', 'input', 'hex', 'sira'];
 const KULLANICI_SUTUNLAR = ['panoName', 'user', 'password', 'adres', 'durum', 'il', 'ilce', 'yetki'];
 
 const guncelle = async (tablo, izinliler, ID, obj) => {
@@ -44,6 +44,7 @@ const hazirla = async () => {
     await calistir(`CREATE TABLE IF NOT EXISTS io (
         ID INTEGER PRIMARY KEY AUTOINCREMENT, hex TEXT, adres INTEGER, durum INTEGER,
         input INTEGER, adi TEXT, status INTEGER, output TEXT, tipi TEXT)`);
+    await calistir('CREATE TABLE IF NOT EXISTS favori (userID INTEGER, ioID INTEGER, PRIMARY KEY (userID, ioID))');
     await calistir('CREATE TABLE IF NOT EXISTS ayar (anahtar TEXT PRIMARY KEY, deger TEXT)');
     await calistir(`CREATE TABLE IF NOT EXISTS zil_kayit (
         ID INTEGER PRIMARY KEY AUTOINCREMENT, zaman TEXT, dosya TEXT, kaynak TEXT, adi TEXT)`);
@@ -61,6 +62,9 @@ const hazirla = async () => {
             if (sutun === 'yetki') await calistir("UPDATE user SET yetki = 'admin', durum = 1");
         }
     }
+
+    // Ekrandaki sıralama için sıra numarası (boşsa sona dizilir)
+    if (!(await sutunVarMi('io', 'sira'))) await calistir('ALTER TABLE io ADD COLUMN sira INTEGER');
 
     // Düz metin saklanan eski şifreleri bcrypt ile şifrele
     const kullanicilar = await hepsi('SELECT ID, password FROM user');
@@ -96,7 +100,7 @@ module.exports = {
     sifreHashliMi,
 
     io: {
-        listele: () => hepsi('SELECT * FROM io ORDER BY ID'),
+        listele: () => hepsi('SELECT * FROM io ORDER BY sira IS NULL, sira, ID'),
         getir: (ID) => tek('SELECT * FROM io WHERE ID = ?', [ID]),
         // Fiziksel buton, Arduino'dan gelen koda (hex) göre bulunur. hex'i boş olan kayıtlar
         // yalnızca ekrandan kontrol edilen sanal kayıtlardır.
@@ -105,6 +109,21 @@ module.exports = {
         ekle: (obj) => calistir('INSERT INTO io (input, hex, adres, status, durum) VALUES (?, ?, ?, ?, ?)',
             [obj.input, obj.hex, obj.adres, obj.status || 0, obj.durum || 0]),
         guncelle: (ID, obj) => guncelle('io', IO_SUTUNLAR, ID, obj),
+        yeni: (obj) => {
+            const keys = Object.keys(obj).filter((k) => IO_SUTUNLAR.includes(k));
+            return calistir(`INSERT INTO io (${keys.join(', ')}) VALUES (${keys.map(() => '?').join(', ')})`, keys.map((k) => obj[k]));
+        },
+        sil: async (ID) => {
+            await calistir('DELETE FROM favori WHERE ioID = ?', [ID]);
+            return calistir('DELETE FROM io WHERE ID = ?', [ID]);
+        },
+    },
+
+    // Her kullanıcının kendi favorileri
+    favori: {
+        listele: async (userID) => (await hepsi('SELECT ioID FROM favori WHERE userID = ?', [userID])).map((r) => r.ioID),
+        ekle: (userID, ioID) => calistir('INSERT OR IGNORE INTO favori (userID, ioID) VALUES (?, ?)', [userID, ioID]),
+        cikar: (userID, ioID) => calistir('DELETE FROM favori WHERE userID = ? AND ioID = ?', [userID, ioID]),
     },
 
     kullanici: {
@@ -117,7 +136,10 @@ module.exports = {
             [obj.user, obj.password, obj.panoName || null, obj.adres || null, obj.il || null, obj.ilce || null,
                 obj.durum === undefined ? 1 : obj.durum, obj.yetki || 'kullanici']),
         guncelle: (ID, obj) => guncelle('user', KULLANICI_SUTUNLAR, ID, obj),
-        sil: (ID) => calistir('DELETE FROM user WHERE ID = ?', [ID]),
+        sil: async (ID) => {
+            await calistir('DELETE FROM favori WHERE userID = ?', [ID]);
+            return calistir('DELETE FROM user WHERE ID = ?', [ID]);
+        },
         temizle: kullaniciTemizle,
     },
 
