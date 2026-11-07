@@ -123,33 +123,45 @@ $(document).ready(async () => {
 });
 
 // --- Canlı kamera ---
-let kameraUrl = null;
+// Her kare ayrı bir HTTP isteğiyle alınır: WebSocket gerekmez, Cloudflare gibi proxy'lerden geçer.
+// Bir kare yüklenince bir sonraki istenir, böylece yavaş bağlantıda kendiliğinden yavaşlar.
 let kameraAcik = false;
+let kameraCalisiyor = false;
+let kareNo = 0;
+let kameraUrl = null;
 
-const kameraIzle = () => {
-  if (kameraAcik && !document.hidden) socket.emit('kameraIzle');
+const kameraDongusu = async () => {
+  if (kameraCalisiyor) return;
+  kameraCalisiyor = true;
+  while (kameraAcik && !document.hidden) {
+    try {
+      const cevap = await fetch(`/kamera/kare?son=${kareNo}`, { cache: 'no-store', credentials: 'same-origin' });
+      if (cevap.status === 401) { window.location.href = '/'; break; }
+      if (!cevap.ok) {
+        let mesaj = 'Kamera bağlanıyor';
+        try { mesaj = (await cevap.json()).message || mesaj; } catch (e) { /* */ }
+        $('.kameraDurum').text(`Kamera görüntüsü alınamıyor: ${mesaj}. Yeniden deneniyor…`).show();
+        await new Promise((r) => setTimeout(r, 3000));
+        continue;
+      }
+      kareNo = parseInt(cevap.headers.get('X-Kare'), 10) || kareNo + 1;
+      const yeni = URL.createObjectURL(await cevap.blob());
+      const img = document.getElementById('kameraCanli');
+      await new Promise((r) => { img.onload = r; img.onerror = r; img.src = yeni; });
+      if (kameraUrl) URL.revokeObjectURL(kameraUrl);
+      kameraUrl = yeni;
+      $('.kameraDurum').hide();
+    } catch (e) {
+      $('.kameraDurum').text('Kamera görüntüsü alınamıyor. Yeniden deneniyor…').show();
+      await new Promise((r) => setTimeout(r, 3000));
+    }
+  }
+  kameraCalisiyor = false;
 };
 
-socket.on('kameraKare', (kare) => {
-  const yeni = URL.createObjectURL(new Blob([kare], { type: 'image/jpeg' }));
-  const img = document.getElementById('kameraCanli');
-  img.onload = () => { if (kameraUrl && kameraUrl !== yeni) URL.revokeObjectURL(kameraUrl); kameraUrl = yeni; };
-  img.src = yeni;
-  $('.kameraDurum').hide();
-});
-
-socket.on('kameraDurum', (d) => {
-  if (d.calisiyor) $('.kameraDurum').hide();
-  else $('.kameraDurum').text(`Kamera görüntüsü alınamıyor: ${d.hata || ''}. Yeniden deneniyor…`).show();
-});
-
-// Bağlantı yeniden kurulunca izlemeye devam et
-socket.on('connect', kameraIzle);
-
-// Sekme arka plandayken görüntü gönderilmesin (Pi'yi ve ağı yormasın)
+// Sekme arka plandayken görüntü istenmez (Pi'yi ve mobil veriyi yormasın)
 document.addEventListener('visibilitychange', () => {
-  if (!kameraAcik) return;
-  if (document.hidden) socket.emit('kameraBirak'); else socket.emit('kameraIzle');
+  if (!document.hidden && kameraAcik) kameraDongusu();
 });
 
 $(document).ready(async () => {
@@ -162,5 +174,5 @@ $(document).ready(async () => {
   }
   kameraAcik = true;
   $('.kameraKutu').show();
-  kameraIzle();
+  kameraDongusu();
 });

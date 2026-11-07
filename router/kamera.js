@@ -18,6 +18,20 @@ router.get('/durum', async (req, res) => {
     res.json({ status: 1, tanimli: await kamera.tanimliMi(), canli: { hata: kamera.canli.sonHata } });
 });
 
+// Canlı görüntünün bir sonraki karesi. Tarayıcı bir kare gelince yenisini ister;
+// böylece hız bağlantıya göre kendiliğinden ayarlanır ve her proxy'den geçer.
+router.get('/kare', async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    if (!(await kamera.tanimliMi())) return res.status(404).json({ status: 0, message: 'Kamera tanımlı değil' });
+    kamera.canli.httpIzle();
+    const son = parseInt(req.query.son, 10) || 0;
+    const sonuc = await kamera.canli.yeniKareBekle(son, 4000);
+    if (!sonuc) {
+        return res.status(503).json({ status: 0, message: kamera.canli.sonHata || 'Kamera bağlanıyor' });
+    }
+    res.set('X-Kare', String(sonuc.no)).type('image/jpeg').send(sonuc.kare);
+});
+
 router.get('/ayar', adminGerekli, async (req, res) => {
     const { kamera_sifre: sifre, ...ayar } = await kamera.ayarGetir();
     res.json({ status: 1, ayar: { ...ayar, sifreVar: !!sifre } });

@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const vt = require('../modul/veritabani');
+const ayarlar = require('../modul/ayarlar');
 
 const router = express.Router();
 
@@ -16,7 +17,7 @@ router.post('/', async (req, res) => {
     if (user === '') return res.json({ status: 0, message: 'Kullanıcı adını boş bıraktınız' });
     if (parola === '') return res.json({ status: 0, message: 'Parolayı boş bıraktınız' });
 
-    const ip = req.ip;
+    const ip = (ayarlar.cloudflare && req.get('CF-Connecting-IP')) || req.ip;
     const kayit = denemeler.get(ip) || { sayi: 0, zaman: 0 };
     if (kayit.sayi >= MAKS_DENEME && Date.now() - kayit.zaman < KILIT_MS) {
         return res.status(429).json({ status: 0, message: 'Çok fazla hatalı deneme. 1 dakika sonra tekrar deneyin.' });

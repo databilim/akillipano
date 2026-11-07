@@ -88,3 +88,14 @@ test('Digest kimlik doğrulamalı kameradan resim indirilir', async () => {
         sunucu.close();
     }
 });
+
+test('canlı görüntü HTTP ile kare kare alınır', { skip: !ffmpegVar && 'ffmpeg yok' }, async () => {
+    const ilk = await (kamera.canli.httpIzle(), kamera.canli.yeniKareBekle(0, 8000));
+    assert.ok(ilk, 'kare gelmedi');
+    assert.strictEqual(ilk.kare[0], 0xff);
+    const ikinci = await kamera.canli.yeniKareBekle(ilk.no, 8000);
+    assert.ok(ikinci && ikinci.no > ilk.no);
+    kamera.canli.cikar('http');
+    clearTimeout(kamera.canli.httpZaman);
+    assert.strictEqual(kamera.canli.surec, null);
+});

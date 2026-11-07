@@ -44,6 +44,10 @@ module.exports = {
         simulasyon: evet(process.env.I2C_SIMULASYON, false), // donanım olmadan denemek için
     },
 
+    // Cloudflare arkasında çalışırken gerçek ziyaretçi IP'si CF-Connecting-IP başlığından alınır
+    // (hatalı giriş sınırı herkes için tek IP sayılmasın diye). Doğrudan internete açıksanız 0 bırakın.
+    cloudflare: evet(process.env.CLOUDFLARE, false),
+
     kanalSayisi: 16,
     zilSuresiMs: sayi(process.env.ZIL_SURE_MS, 3000),
     butonKilitMs: sayi(process.env.BUTON_KILIT_MS, 300),

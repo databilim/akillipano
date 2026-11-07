@@ -1,7 +1,7 @@
 // Ana ekrana eklenen uygulama için service worker.
 // Sayfa ve API istekleri her zaman ağdan gelir (pano durumu güncel olmalı);
 // yalnızca css/js/resim dosyaları önbellekten hızlı açılır, arka planda yenilenir.
-const ONBELLEK = 'pano-statik-v1';
+const ONBELLEK = 'pano-statik-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {

@@ -24,7 +24,11 @@ const oturum = session({
 });
 
 app.disable('x-powered-by');
-app.use(express.static(path.join(__dirname, 'public')));
+// Dosyalar her açılışta sunucuya sorulur (değişmediyse 304 döner). Cloudflare ya da tarayıcı
+// önbelleği güncellemeden sonra eski dosyaları göstermesin diye.
+app.use(express.static(path.join(__dirname, 'public'), {
+    setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(oturum);
@@ -55,18 +59,6 @@ io.use(async (socket, next) => {
 io.on('connection', (socket) => {
     socket.emit('sistemDurumu', { i2c: i2c.durumGetir() });
 
-    // Canlı kamera: yalnızca izleyen varken ffmpeg çalışır
-    socket.on('kameraIzle', () => {
-        socket.join('kamera');
-        kamera.canli.ekle(socket.id);
-        if (kamera.canli.sonHata) socket.emit('kameraDurum', { calisiyor: false, hata: kamera.canli.sonHata });
-    });
-    socket.on('kameraBirak', () => {
-        socket.leave('kamera');
-        kamera.canli.cikar(socket.id);
-    });
-    socket.on('disconnect', () => kamera.canli.cikar(socket.id));
-
     // İstemci yalnızca kaydın ID'sini gönderir; hangi rölenin tetikleneceği veritabanından okunur.
     // Eski arayüzle uyum için JSON metin ya da nesne kabul edilir.
     socket.on('start', async (veri, cevap) => {
@@ -96,9 +88,6 @@ i2c.on('durum', (durum) => io.emit('sistemDurumu', { i2c: durum }));
 pano.olaylar.on('zilCaldi', (kayit) => kamera.zilFotografi(kayit.adi));
 kamera.olaylar.on('zilFotografi', (k) => io.emit('zilFotografi', k));
 kamera.olaylar.on('hata', (h) => io.emit('hata', h));
-// Kareler yavaş bağlantılı istemcilerde birikmesin diye "volatile" gönderilir
-kamera.olaylar.on('kare', (kare) => io.to('kamera').volatile.emit('kameraKare', kare));
-kamera.olaylar.on('canliDurum', (d) => io.to('kamera').emit('kameraDurum', d));
 
 process.on('unhandledRejection', (e) => console.error('Yakalanmamış hata:', e));
 

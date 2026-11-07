@@ -12,6 +12,7 @@ const ayarlar = require('./ayarlar');
 const vt = require('./veritabani');
 
 const olaylar = new EventEmitter();
+olaylar.setMaxListeners(100); // her bekleyen kare isteği geçici bir dinleyici ekler
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 
 const AYAR_ALANLARI = ['kamera_ip', 'kamera_kullanici', 'kamera_sifre', 'kamera_rtsp_port', 'kamera_rtsp_yol', 'kamera_onvif_port'];
@@ -253,6 +254,28 @@ const canli = {
     yenidenZaman: null,
     sonHata: null,
 
+    sonKare: null,
+    kareNo: 0,
+    httpZaman: null,
+
+    // HTTP ile izleyen (tarayıcı her kareyi ayrı istekle alır; Cloudflare gibi proxy'lerden sorunsuz geçer).
+    // 15 saniye istek gelmezse izleyici bırakılmış sayılır.
+    httpIzle() {
+        clearTimeout(this.httpZaman);
+        this.httpZaman = setTimeout(() => this.cikar('http'), 15000);
+        if (!this.izleyiciler.has('http')) this.ekle('http');
+    },
+
+    // "son" numaralı kareden daha yeni bir kare gelene kadar en fazla beklemeMs bekler
+    yeniKareBekle(son, beklemeMs) {
+        if (this.sonKare && this.kareNo > son) return Promise.resolve({ kare: this.sonKare, no: this.kareNo });
+        return new Promise((resolve) => {
+            const dinle = () => { clearTimeout(zaman); resolve({ kare: this.sonKare, no: this.kareNo }); };
+            const zaman = setTimeout(() => { olaylar.off('kare', dinle); resolve(null); }, beklemeMs);
+            olaylar.once('kare', dinle);
+        });
+    },
+
     ekle(id) {
         this.izleyiciler.add(id);
         if (!this.surec && !this.yenidenZaman) this.baslat();
@@ -266,6 +289,7 @@ const canli = {
         this.yenidenZaman = null;
         if (this.surec) { this.surec.removeAllListeners('close'); this.surec.kill('SIGKILL'); }
         this.surec = null;
+        this.sonKare = null;
     },
     yenidenBaslat() {
         this.durdur();
@@ -296,8 +320,10 @@ const canli = {
                 if (son < 0) { tampon = tampon.subarray(bas); break; }
                 const kare = tampon.subarray(bas, son + 2);
                 tampon = tampon.subarray(son + 2);
-                if (this.sonHata) { this.sonHata = null; olaylar.emit('canliDurum', { calisiyor: true }); }
-                olaylar.emit('kare', kare);
+                this.sonHata = null;
+                this.sonKare = Buffer.from(kare);
+                this.kareNo += 1;
+                olaylar.emit('kare', this.sonKare);
             }
             if (tampon.length > 5 * 1024 * 1024) tampon = Buffer.alloc(0);
         });
@@ -305,7 +331,7 @@ const canli = {
             if (this.surec !== surec) return;
             this.surec = null;
             this.sonHata = hata || 'Kamera bağlantısı koptu';
-            olaylar.emit('canliDurum', { calisiyor: false, hata: this.sonHata });
+            this.sonKare = null;
             onbellek.rtspAdres = null;
             if (this.izleyiciler.size) this.yenidenZaman = setTimeout(() => { this.yenidenZaman = null; this.baslat(); }, 5000);
         });
