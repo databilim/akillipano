@@ -5,3 +5,4 @@ node_modules/
 *.ovpn
 .DS_Store
 __MACOSX/
+.oturum-anahtari

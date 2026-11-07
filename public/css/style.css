@@ -92,3 +92,49 @@ h3{
 .modal-content {
     color: #4E4E4E;
 }
+/* Bağlantı uyarısı ve bildirimler */
+.baglantiUyari {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    background-color: #c62828;
+    color: #fff;
+    font-weight: 400;
+    font-size: 14px;
+    padding: 8px 16px;
+    text-align: center;
+}
+.bildirimKutu {
+    position: fixed;
+    left: 50%;
+    bottom: 70px;
+    transform: translateX(-50%);
+    z-index: 2001;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    max-width: 90%;
+}
+.input.hatali { border-color: #c62828; }
+.input a { cursor: pointer; }
+
+/* Kullanıcılar sayfası */
+.kullaniciPanel {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border-radius: 16px;
+    padding: 16px;
+    margin: 16px auto;
+    width: 100%;
+    max-width: 720px;
+}
+.kullaniciPanel h2 { font-size: 18px; font-weight: 400; }
+.kullaniciPanel table { width: 100%; font-size: 14px; }
+.kullaniciPanel td, .kullaniciPanel th { padding: 6px 4px; border-bottom: 1px solid #eee; vertical-align: middle; }
+.kullaniciPanel .btn { margin: 2px 0; }
+.ayarlarListe a { display: block; padding: 10px 0; border-bottom: 1px solid #eee; }

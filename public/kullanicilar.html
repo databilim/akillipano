@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.css" >
+    <link rel="stylesheet" href="/css/style.css" >
+   
+    <script src="/js/jquery.js"></script>
+    <script src="/js/axios.js"></script>
+    <script src="/js/moment.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <title>Kullanıcılar</title>
+  </head>
+  <body>
+
+  
+    <div class="ust">
+
+      <div class="ustMenu connect "> <img width="35" src="/img/connect.svg" alt="">  </div>
+      <div class="ustMenu logo" > <img width="100" src="/img/logo-beyaz.svg" alt=""></div>
+      <div class="ustMenu zaman">  <span class="havaDurumu" style=" margin-right: 10px; color: #929292;">12</span>    <span><img width="25" src="img/derece.svg" alt=""></span>  <span class="time" ></span>   </div>
+      
+ </div>
+   
+   <div class="orta">
+
+     <div class="kullaniciPanel" id="sifre">
+       <h2>Şifremi değiştir</h2>
+       <form id="sifreForm">
+         <div class="form-group"><input class="form-control" type="password" name="eskiSifre" placeholder="Mevcut şifre" autocomplete="current-password" required></div>
+         <div class="form-group"><input class="form-control" type="password" name="yeniSifre" placeholder="Yeni şifre (en az 6 karakter)" autocomplete="new-password" minlength="6" required></div>
+         <div class="form-group"><input class="form-control" type="password" name="yeniSifre2" placeholder="Yeni şifre (tekrar)" autocomplete="new-password" minlength="6" required></div>
+         <div class="formMesaj"></div>
+         <button class="btn btn-primary" type="submit">Şifreyi değiştir</button>
+       </form>
+     </div>
+
+     <div class="kullaniciPanel sadeceYonetici" style="display:none">
+       <h2>Kullanıcılar</h2>
+       <table>
+         <thead><tr><th>Kullanıcı adı</th><th>Yetki</th><th>Durum</th><th></th></tr></thead>
+         <tbody id="kullaniciListe"></tbody>
+       </table>
+     </div>
+
+     <div class="kullaniciPanel sadeceYonetici" style="display:none">
+       <h2>Yeni kullanıcı ekle</h2>
+       <form id="ekleForm">
+         <div class="form-group"><input class="form-control" type="text" name="user" placeholder="Kullanıcı adı" autocomplete="off" required></div>
+         <div class="form-group"><input class="form-control" type="password" name="password" placeholder="Şifre (en az 6 karakter)" autocomplete="new-password" minlength="6" required></div>
+         <div class="form-group">
+           <select class="form-control" name="yetki">
+             <option value="kullanici">Kullanıcı (yalnızca aç/kapa)</option>
+             <option value="admin">Yönetici (tüm ayarlar)</option>
+           </select>
+         </div>
+         <div class="formMesaj"></div>
+         <button class="btn btn-success" type="submit">Ekle</button>
+       </form>
+     </div>
+
+   </div>
+
+   <!-- Kullanıcı düzenleme -->
+   <div class="modal fade" id="duzenleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Kullanıcıyı düzenle</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Kapat"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+          <form id="duzenleForm">
+            <input type="hidden" name="ID">
+            <div class="form-group"><label>Kullanıcı adı</label><input class="form-control" type="text" name="user" required></div>
+            <div class="form-group"><label>Pano adı</label><input class="form-control" type="text" name="panoName"></div>
+            <div class="form-group"><label>İl</label><input class="form-control" type="text" name="il"></div>
+            <div class="form-group"><label>İlçe</label><input class="form-control" type="text" name="ilce"></div>
+            <div class="form-group"><label>Yetki</label>
+              <select class="form-control" name="yetki">
+                <option value="kullanici">Kullanıcı (yalnızca aç/kapa)</option>
+                <option value="admin">Yönetici (tüm ayarlar)</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Durum</label>
+              <select class="form-control" name="durum">
+                <option value="1">Aktif</option>
+                <option value="0">Pasif (giriş yapamaz)</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Yeni şifre (değiştirmek istemiyorsanız boş bırakın)</label><input class="form-control" type="password" name="yeniSifre" autocomplete="new-password"></div>
+            <div class="formMesaj"></div>
+            <button class="btn btn-primary" type="submit">Kaydet</button>
+          </form>
+        </div>
+      </div>
+    </div>
+   </div>
+
+   <div class="alt">
+    <a href="/profil.html"> <div class="altMenu"><span><img src="img/home.svg" alt=""></div></a>
+     <a href=""> <div class="altMenu"><span><img src="img/yildiz.svg" alt=""></div></a>
+     <a href="#" data-toggle="modal" data-target="#ayarlar"><div class="altMenu"><img src="img/cark.svg" alt=""></div></a> 
+      <a href="#" data-toggle="modal" data-target="#bildirimler" ><div class="altMenu"><img src="img/bildirim.svg" alt=""></div></a>
+   </div>
+
+
+   <!-- Modal ayarlar -->
+   <div class="modal fade" id="ayarlar" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ayarlar</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body ayarlarListe">
+          <a class="sadeceYonetici" style="display:none" href="tanimsiz.html">Tanımsız butonlar</a>
+          <a class="sadeceYonetici" style="display:none" href="kullanicilar.html">Kullanıcılar</a>
+          <a href="kullanicilar.html#sifre">Şifremi değiştir</a>
+          <a href="#" onclick="return cikisYap(event)">Çıkış yap</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+   <!-- Modal bildirimler -->
+<div class="modal fade" id="bildirimler" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bildirimler</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        Bildirimler     
+      
+      
+      </div>
+    </div>
+  </div>
+</div>
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/modul/socket.js"></script>
+    <script src="/js/modul/lib.js"></script>
+    <script src="/js/modul/kullanicilar.js"></script>
+  </body>
+</html>
