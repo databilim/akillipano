@@ -100,3 +100,37 @@ $(document).ready(async () => {
   zilSonlariGoster();
   $('#bildirimler').on('show.bs.modal', () => { okunmamisZil = 0; rozetGuncelle(); });
 });
+
+// --- Telefonun ana ekranına ekleme (uygulama gibi açılır) ---
+let kurulumIstegi = null;
+window.addEventListener('beforeinstallprompt', (olay) => {
+  olay.preventDefault();
+  kurulumIstegi = olay;
+});
+
+const uygulamaOlarakAcik = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+const anaEkranaEkle = async (event) => {
+  if (event) event.preventDefault();
+  if (uygulamaOlarakAcik()) {
+    alert('Uygulama zaten ana ekrandan açılmış.');
+    return false;
+  }
+  if (kurulumIstegi) {
+    kurulumIstegi.prompt();
+    await kurulumIstegi.userChoice;
+    kurulumIstegi = null;
+    return false;
+  }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  alert(ios
+    ? 'Safari\'de alttaki Paylaş (kare ve yukarı ok) simgesine dokunun, ardından "Ana Ekrana Ekle"yi seçin.'
+    : 'Chrome\'da sağ üstteki üç nokta menüsünü açın, ardından "Ana ekrana ekle" ya da "Uygulamayı yükle"yi seçin.');
+  return false;
+};
+
+$(() => { if (uygulamaOlarakAcik()) $('.anaEkranaEkle').hide(); });
+
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
